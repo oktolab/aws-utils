@@ -3,9 +3,13 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.com.oktolab.aws</groupId>
 	<artifactId>aws-utils</artifactId>
-	<version>1.3.0</version>
+	<version>1.4.0</version>
 
 	<repositories>
+		<repository>
+			<id>central</id>
+			<url>http://repo1.maven.org/maven2/</url>
+		</repository>
 		<repository>
 			<id>maven-s3-okto-release</id>
 			<url>s3://m2-repository-okto/releases</url>
@@ -43,7 +47,7 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-sqs</artifactId>
-			<version>1.11.28</version>
+			<version>1.11.34</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
