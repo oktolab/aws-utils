@@ -9,9 +9,11 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
 import com.amazonaws.services.sqs.buffered.AmazonSQSBufferedAsyncClient;
-import com.amazonaws.services.sqs.buffered.QueueBufferConfig;
+import com.amazonaws.services.sqs.model.DeleteMessageResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.amazonaws.services.sqs.model.SendMessageResult;
 
 public class SQSUtil {
 
@@ -20,41 +22,60 @@ public class SQSUtil {
 	private static AmazonSQSBufferedAsyncClient sqs;
 	
 	static {
-		QueueBufferConfig config = new QueueBufferConfig();
+//		QueueBufferConfig config = new QueueBufferConfig();
 //			.withMaxBatchOpenMs(5000)
 //			.withMaxDoneReceiveBatches(100);
-		AmazonSQSAsyncClient client = new AmazonSQSAsyncClient();
-		sqs = new AmazonSQSBufferedAsyncClient(client, config);
+		sqs = new AmazonSQSBufferedAsyncClient(AmazonSQSAsyncClient.asyncBuilder().build());
 	}
 	
-	public static void sendMessage(String url, String body) {
+	public static SendMessageResult sendMessageFIFO(String url, String groupId, String body) {
 		try {
-			sqs.sendMessage(url, body);
+			SendMessageRequest request = new SendMessageRequest(url, body);
+			request.setMessageGroupId(groupId);
+			return sqs.sendMessage(request);
 		} catch (Exception e) {
 			if (e instanceof AmazonClientException) {
 				sqs = new AmazonSQSBufferedAsyncClient(
-						new AmazonSQSAsyncClient());
+						AmazonSQSAsyncClient.asyncBuilder().build());
 				try { // retry
-					sqs.sendMessage(url, body);
+					return sqs.sendMessage(url, body);
 				} catch (Exception e2) {} // NOOP
 			}
 			LOG.warn("Erro ao tentar ENVIAR mensagens SQS.", e);
 		}
+		return null;
 	}
 	
-	public static void deleteMessage(String arn, String receiptHandler) {
+	public static SendMessageResult sendMessage(String url, String body) {
 		try {
-			sqs.deleteMessage(arn, receiptHandler);
+			return sqs.sendMessage(url, body);
 		} catch (Exception e) {
 			if (e instanceof AmazonClientException) {
 				sqs = new AmazonSQSBufferedAsyncClient(
-						new AmazonSQSAsyncClient());
+						AmazonSQSAsyncClient.asyncBuilder().build());
 				try { // retry
-					sqs.deleteMessage(arn, receiptHandler);
+					return sqs.sendMessage(url, body);
+				} catch (Exception e2) {} // NOOP
+			}
+			LOG.warn("Erro ao tentar ENVIAR mensagens SQS.", e);
+		}
+		return null;
+	}
+	
+	public static DeleteMessageResult deleteMessage(String arn, String receiptHandler) {
+		try {
+			return sqs.deleteMessage(arn, receiptHandler);
+		} catch (Exception e) {
+			if (e instanceof AmazonClientException) {
+				sqs = new AmazonSQSBufferedAsyncClient(
+						AmazonSQSAsyncClient.asyncBuilder().build());
+				try { // retry
+					return sqs.deleteMessage(arn, receiptHandler);
 				} catch (Exception e2) {} // NOOP
 			}
 			LOG.warn("Erro ao tentar DELETAR mensagens SQS.", e);
 		}
+		return null;
 	}
 	
 	public static List<Message> getMessages(String arn) {
@@ -71,7 +92,7 @@ public class SQSUtil {
 		} catch (Exception e) {
 			if (e instanceof AmazonClientException) {
 				sqs = new AmazonSQSBufferedAsyncClient(
-						new AmazonSQSAsyncClient());
+						AmazonSQSAsyncClient.asyncBuilder().build());
 				try { // retry
 					messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 				} catch (Exception e2) {} // NOOP
