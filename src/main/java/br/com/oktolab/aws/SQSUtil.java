@@ -41,7 +41,7 @@ public class SQSUtil {
 					return sqs.sendMessage(url, body);
 				} catch (Exception e2) {} // NOOP
 			}
-			LOG.warn("Erro ao tentar ENVIAR mensagens SQS.", e);
+			LOG.warn(String.format("Erro ao tentar ENVIAR mensagens SQS. %s", url), e);
 		}
 		return null;
 	}
@@ -57,7 +57,7 @@ public class SQSUtil {
 					return sqs.sendMessage(url, body);
 				} catch (Exception e2) {} // NOOP
 			}
-			LOG.warn("Erro ao tentar ENVIAR mensagens SQS.", e);
+			LOG.warn(String.format("Erro ao tentar ENVIAR mensagens SQS. %s", url), e);
 		}
 		return null;
 	}
@@ -73,7 +73,7 @@ public class SQSUtil {
 					return sqs.deleteMessage(arn, receiptHandler);
 				} catch (Exception e2) {} // NOOP
 			}
-			LOG.warn("Erro ao tentar DELETAR mensagens SQS.", e);
+			LOG.warn(String.format("Erro ao tentar DELETAR mensagens SQS. %s", arn), e);
 		}
 		return null;
 	}
@@ -97,7 +97,7 @@ public class SQSUtil {
 					messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 				} catch (Exception e2) {} // NOOP
 			}
-			LOG.warn("Erro ao tentar LER mensagens SQS.", e);
+			LOG.warn(String.format("Erro ao tentar LER mensagens SQS. %s", arn), e);
 		}
 		return messages != null ? messages : new ArrayList<Message>();
 	}
