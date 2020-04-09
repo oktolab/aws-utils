@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
+import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder;
 import com.amazonaws.services.sqs.buffered.AmazonSQSBufferedAsyncClient;
 import com.amazonaws.services.sqs.model.DeleteMessageResult;
 import com.amazonaws.services.sqs.model.Message;
@@ -16,16 +18,27 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
 
 public class SQSUtil {
-
+	
 	private static final Logger LOG = LoggerFactory.getLogger(SQSUtil.class);
 	
 	private static AmazonSQSBufferedAsyncClient sqs;
+
+	private static int maxConnections = 300;
 	
 	static {
-//		QueueBufferConfig config = new QueueBufferConfig();
-//			.withMaxBatchOpenMs(5000)
-//			.withMaxDoneReceiveBatches(100);
-		sqs = new AmazonSQSBufferedAsyncClient(AmazonSQSAsyncClient.asyncBuilder().build());
+		sqs = createSqsClient();
+	}
+	
+	public void setMaxConnections(int maxConnections) {
+		SQSUtil.maxConnections = maxConnections;
+	}
+
+	public static AmazonSQSBufferedAsyncClient createSqsClient() {
+		ClientConfiguration config = new ClientConfiguration();
+		config.setMaxConnections(maxConnections);
+		AmazonSQSAsyncClientBuilder builder = AmazonSQSAsyncClient.asyncBuilder();
+		builder.setClientConfiguration(config);
+		return new AmazonSQSBufferedAsyncClient(builder.build());
 	}
 	
 	public static SendMessageResult sendMessageFIFO(String url, String groupId, String body) {
@@ -35,8 +48,7 @@ public class SQSUtil {
 			return sqs.sendMessage(request);
 		} catch (Exception e) {
 			if (e instanceof AmazonClientException) {
-				sqs = new AmazonSQSBufferedAsyncClient(
-						AmazonSQSAsyncClient.asyncBuilder().build());
+				sqs = createSqsClient();
 				try { // retry
 					return sqs.sendMessage(url, body);
 				} catch (Exception e2) {} // NOOP
@@ -51,8 +63,7 @@ public class SQSUtil {
 			return sqs.sendMessage(url, body);
 		} catch (Exception e) {
 			if (e instanceof AmazonClientException) {
-				sqs = new AmazonSQSBufferedAsyncClient(
-						AmazonSQSAsyncClient.asyncBuilder().build());
+				sqs = createSqsClient();
 				try { // retry
 					return sqs.sendMessage(url, body);
 				} catch (Exception e2) {} // NOOP
@@ -67,8 +78,7 @@ public class SQSUtil {
 			return sqs.deleteMessage(arn, receiptHandler);
 		} catch (Exception e) {
 			if (e instanceof AmazonClientException) {
-				sqs = new AmazonSQSBufferedAsyncClient(
-						AmazonSQSAsyncClient.asyncBuilder().build());
+				sqs = createSqsClient();
 				try { // retry
 					return sqs.deleteMessage(arn, receiptHandler);
 				} catch (Exception e2) {} // NOOP
@@ -91,8 +101,7 @@ public class SQSUtil {
 			return messages;
 		} catch (Exception e) {
 			if (e instanceof AmazonClientException) {
-				sqs = new AmazonSQSBufferedAsyncClient(
-						AmazonSQSAsyncClient.asyncBuilder().build());
+				sqs = createSqsClient();
 				try { // retry
 					messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 				} catch (Exception e2) {} // NOOP
